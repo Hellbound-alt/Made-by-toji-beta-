@@ -1,0 +1,333 @@
+local scriptString = [[
+
+-- Define GUI elements
+
+local Toji = Instance.new("ScreenGui")
+
+local Frame = Instance.new("Frame")
+
+local TextButton = Instance.new("TextButton")
+
+local UICorner = Instance.new("UICorner")
+
+Toji.Name = "BY Toji"
+
+Toji.Parent = game.CoreGui
+
+BladLock.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+Frame.Parent = Toji
+
+Frame.BackgroundColor3 = Color3.new(0, 0, 0)
+
+Frame.BorderColor3 = Color3.new(0, 0, 0)
+
+Frame.Position = UDim2.new(0.1, 0, 0.1, 0)
+
+Frame.Size = UDim2.new(0, 150, 0, 50)
+
+Frame.Active = true
+
+Frame.Draggable = true
+
+UICorner.CornerRadius = UDim.new(0, 5)
+
+UICorner.Parent = Frame
+
+TextButton.Parent = Frame
+
+TextButton.BackgroundColor3 = Color3.new(0, 0, 0)
+
+TextButton.BorderColor3 = Color3.new(0, 0, 0)
+
+TextButton.Position = UDim2.new(0.05, 0, 0.2, 0)
+
+TextButton.Size = UDim2.new(0.9, 0, 0.6, 0)
+
+TextButton.Font = Enum.Font.SourceSansSemibold
+
+TextButton.Text = "Toji OFF"
+
+TextButton.TextColor3 = Color3.new(1, 1, 1)
+
+TextButton.TextScaled = true
+
+TextButton.TextSize = 14
+
+TextButton.TextWrapped = true
+
+UICorner.Parent = TextButton
+
+-- Main settings for Camlock
+
+local Settings = {
+
+    CamlockEnabled = true,
+
+    Prediction = 0.1678963,
+
+    HorizontalPrediction = 0.1760773,
+
+    VerticalPrediction = 0.160692,
+
+    XPrediction = 0.176073,
+
+    YPrediction = 0.167092,
+
+    Smoothness = {
+
+        Enabled = true,
+
+        Amount = 0.03,
+
+        Shake = false,
+
+        ShakeValue = 2,
+
+        ShakeSmoothness = 0.1,
+
+    },
+
+    AimPart = "HumanoidRootPart",
+
+    CenterPosition = Vector2.new(
+
+        game:GetService("GuiService"):GetScreenResolution().X / 2,
+
+        game:GetService("GuiService"):GetScreenResolution().Y / 2
+
+    ),
+
+    
+
+    -- Additional settings
+
+    Enabled = true,
+
+    AutoPrediction = true,
+
+    Type = "Math",
+
+    ping20_30 = 0.12588,
+
+    ping30_40 = 0.11911,
+
+    ping40_50 = 0.12471,
+
+    ping50_60 = 0.13766,
+
+    ping60_70 = 0.13731,
+
+    ping70_80 = 0.147986,
+
+    ping80_90 = 0.1294,
+
+    ping90_100 = 0.1679863,
+
+    ping100_110 = 0.1674978,
+
+    ping110_120 = 0.16749363,
+
+    ping120_130 = 0.175563,
+
+    ping130_140 = 0.1737,
+
+    ping140_150 = 0.178872,
+
+    ping150_160 = 0.1714,
+
+    ping160_170 = 0.1863,
+
+    ping170_180 = 0.1872,
+
+    ping180_190 = 0.1848,
+
+    ping190_200 = 0.1865,
+
+    
+
+    -- New settings
+
+    aimbot_enabled = true,
+
+    aimbot_smoothing = true,
+
+    aimbot_sensitivity = true,
+
+    aimbot_bind = 6,
+
+    aimbot_bind_mode = 0,
+
+    aimbot_part = 1,
+
+    streamproof = false,
+
+    v_sync = true,
+
+    show_name = false,
+
+    show_boxes = false,
+
+    show_fov = false,
+
+    show_deadzone = false,
+
+    show_tracers = false,
+
+    prediction = true,
+
+    stickyaim = true,
+
+    teamcheck = false,
+
+    knockcheck = false,
+
+    aimbot_fov = 100,
+
+    filled_fov = false,
+
+    aimbot_deadzone = 0,
+
+    filled_deadzone = false,
+
+    pred_x = 3.012,
+
+    pred_y = 4.019,
+
+    x_offset = 0,
+
+    y_offset = 0,
+
+    deadzone_flag = false,
+
+    fov_flag = false,
+
+    prediction_dot = false,
+
+    pred_dot_type = 0,
+
+    tracer_type = 0,
+
+    shake = false,
+
+    shake_x = 0,
+
+    shake_y = 0,
+
+    box_type = 0,
+
+}
+
+-- Function to find the nearest player
+
+local function FindNearestPlayer()
+
+    local LocalPlayer = game.Players.LocalPlayer
+
+    local ClosestDistance, ClosestPlayer = math.huge, nil
+
+    for _, Player in ipairs(game.Players:GetPlayers()) do
+
+        if Player ~= LocalPlayer then
+
+            local Character = Player.Character
+
+            if Character and Character:FindFirstChild(Settings.AimPart) and Character:FindFirstChildOfClass("Humanoid") and Character.Humanoid.Health > 0 then
+
+                local Position, IsVisibleOnViewport = game.Workspace.CurrentCamera:WorldToViewportPoint(Character[Settings.AimPart].Position)
+
+                if IsVisibleOnViewport then
+
+                    local Distance = (Settings.CenterPosition - Vector2.new(Position.X, Position.Y)).Magnitude
+
+                    if Distance < ClosestDistance then
+
+                        ClosestPlayer = Character[Settings.AimPart]
+
+                        ClosestDistance = Distance
+
+                    end
+
+                end
+
+            end
+
+        end
+
+    end
+
+    return ClosestPlayer
+
+end
+
+-- Aiming logic to lock camera on the nearest player with prediction
+
+local playerTarget = nil
+
+game:GetService("RunService").Heartbeat:Connect(function()
+
+    if playerTarget and Settings.CamlockEnabled then
+
+        local camera = game.Workspace.CurrentCamera
+
+        local targetPosition = playerTarget.Position
+
+        if Settings.CamlockEnabled then
+
+            targetPosition = Vector3.new(
+
+                targetPosition.X + Settings.Prediction * playerTarget.Velocity.X,
+
+                targetPosition.Y + Settings.Prediction * playerTarget.Velocity.Y,
+
+                targetPosition.Z
+
+            )
+
+        end
+
+        if Settings.Smoothness.Enabled then
+
+            local currentPosition = camera.CFrame.Position
+
+            targetPosition = currentPosition:Lerp(targetPosition, Settings.Smoothness.Amount / 10)
+
+        end
+
+        camera.CFrame = CFrame.new(camera.CFrame.Position, targetPosition)
+
+    end
+
+end)
+
+-- Toggle Camlock state on TextButton click
+
+TextButton.MouseButton1Click:Connect(function()
+
+    if playerTarget then
+
+        playerTarget = nil
+
+        Settings.CamlockEnabled = false
+
+        TextButton.Text = "Toji OFF"
+
+    else
+
+        playerTarget = FindNearestPlayer()
+
+        if playerTarget then
+
+            Settings.CamlockEnabled = true
+
+            TextButton.Text = "Toji ON"
+
+        end
+
+    end
+
+end)
+
+]]
+
+loadstring(scriptString)()
